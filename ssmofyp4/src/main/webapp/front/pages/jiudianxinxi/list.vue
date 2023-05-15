@@ -1,0 +1,353 @@
+<template>
+<mescroll-uni @init="mescrollInit" :up="upOption" :down="downOption" @down="downCallback" @up="upCallback">
+	<view class="content">
+		<view :style='{"width":"100%","padding":"0 0 64rpx","position":"relative","background":"url(http://codegen.caihongy.cn/20221108/581bb1956ffe4c8182127ca1e196e95e.png) fixed","height":"auto"}'>
+			<view class="cu-bar bg-white search" style="width:100%" :style="[{top:CustomBar + 'px'}]">
+				<picker v-if="queryList.length>1" mode="selector" :range="queryList" range-key="queryName" :value="queryIndex" @change="queryChange" style="padding-left: 20upx;">
+					<view><image style="width: 20upx;height: 33upx;" src="../../static/center/to.png"></image></view>
+				</picker>
+					<view v-if="queryIndex==0" class="search-form round">
+						<text class="cuIcon-search"></text>
+						<input v-model="searchForm.jiudianmingcheng" type="text" placeholder="Name" ></input>
+					</view>
+					<view v-if="queryIndex==1" class="search-form round">
+						<text class="cuIcon-search"></text>
+						<input v-model="searchForm.leibie" type="text" placeholder="Type" ></input>
+					</view>
+					<view v-if="queryIndex==2" class="search-form round">
+						<text class="cuIcon-search"></text>
+						<input v-model="searchForm.xingji" type="text" placeholder="Star" ></input>
+					</view>
+					<view v-if="queryIndex==3" class="search-form round">
+						<text class="cuIcon-search"></text>
+						<input v-model="searchForm.fangjianleixing" type="text" placeholder="Room Type" ></input>
+					</view>
+					<view v-if="queryIndex==4" class="search-form round">
+						<text class="cuIcon-search"></text>
+						<input v-model="searchForm.jiudiandizhi" type="text" placeholder="Address" ></input>
+					</view>
+				<view class="action">
+					<button @tap="search" class="cu-btn shadow-blur round">搜索</button>
+				</view>
+			</view>
+
+			
+			<!-- 样式1 -->
+			<view class="uni-product-list" :style='{"padding":"24rpx","margin":"0","flexWrap":"wrap","display":"flex","width":"100%","justifyContent":"space-between","height":"auto"}'>
+				<view @tap="onDetailTap(product)" class="uni-product" :style='{"boxShadow":"-8rpx 0px 0px rgba(188,188,226,.9)","padding":"16rpx","margin":"0 0 20rpx","backgroundColor":"#ecebf6","borderRadius":"12rpx","width":"48%","height":"auto"}' v-for="(product,index) in list" :key="index">
+					<view class="uni-product-title" :style='{"padding":"4rpx 20rpx","color":"#333","borderRadius":"8rpx 8rpx 0 0","background":"#fff","width":"100%","lineHeight":"48rpx","fontSize":"28rpx"}'>{{product.jiudianmingcheng}}</view>
+					<image :style='{"width":"100%","padding":"0","margin":"0","objectFit":"cover","display":"block","height":"300rpx"}' mode="aspectFill" class="uni-product-image" v-if="product.jiudiantupian.substr(0,4)=='http'" :src="product.jiudiantupian.split(',')[0]"></image>
+					<image :style='{"width":"100%","padding":"0","margin":"0","objectFit":"cover","display":"block","height":"300rpx"}' mode="aspectFill" class="uni-product-image" v-else :src="product.jiudiantupian?baseUrl+product.jiudiantupian.split(',')[0]:''"></image>
+					<view :style='{"width":"100%","padding":"8rpx 20rpx","margin":"8rpx 0 0 0","justifyContent":"space-between","display":"flex","height":"auto"}'>
+						<view :style='{"display":"flex"}' v-if="(userid && isAuth('jiudianxinxi','Modify')) || (!userid && isAuthFront('jiudianxinxi','Modify'))" @click.stop="onUpdateTap(product.id)">
+							<text :style='{"margin":"0 8rpx 0 0","fontSize":"28rpx","lineHeight":"1","color":"#706bd6","display":"inline-block"}' class="cuIcon-edit"></text>
+							<text :style='{"fontSize":"28rpx","lineHeight":"1","color":"#706bd6","display":"inline-block"}'>Modify</text>
+						</view>
+						<view :style='{"display":"flex"}' v-if="(userid && isAuth('jiudianxinxi','Delete')) || (!userid && isAuthFront('jiudianxinxi','Delete'))" @click.stop="onDeleteTap(product.id)">
+							<text :style='{"margin":"0 8rpx 0 0","fontSize":"28rpx","lineHeight":"1","color":"#c93508","display":"inline-block"}' class="cuIcon-delete"></text>
+							<text :style='{"fontSize":"28rpx","lineHeight":"1","color":"#c93508","display":"inline-block"}'>Delete</text>
+						</view>
+					</view>
+				</view>
+			</view>
+			<!-- 样式2 -->
+			
+			<!-- 样式3 -->
+			
+			<!-- 样式4 -->
+			
+			<!-- 样式5 -->
+			
+
+			
+			
+			
+		</view>
+
+		<button :style='{"border":"0","boxShadow":"0 2rpx 12rpx rgba(0,0,0,.3)","color":"rgb(255, 255, 255)","bottom":"40rpx","right":"8rpx","outline":"none","borderRadius":"100%","background":"rgb(255, 170, 51)","width":"80rpx","lineHeight":"80rpx","fontSize":"28rpx","position":"absolute","height":"80rpx","zIndex":"999"}' v-if="userid && isAuth('jiudianxinxi','Add')" class="add-btn" @click="onAddTap()">Add</button>
+		<button :style='{"border":"0","boxShadow":"0 2rpx 12rpx rgba(0,0,0,.3)","color":"rgb(255, 255, 255)","bottom":"40rpx","right":"8rpx","outline":"none","borderRadius":"100%","background":"rgb(255, 170, 51)","width":"80rpx","lineHeight":"80rpx","fontSize":"28rpx","position":"absolute","height":"80rpx","zIndex":"999"}' v-if="!userid && isAuthFront('jiudianxinxi','Add')" class="add-btn" @click="onAddTap()">Add</button>
+	</view>
+</mescroll-uni>
+</template>
+
+<script>
+	export default {
+		data() {
+			return {
+				btnColor: ['#409eff','#67c23a','#909399','#e6a23c','#f56c6c','#356c6c','#351c6c','#f093a9','#a7c23a','#104eff','#10441f','#a21233','#503319'],
+				queryList:[
+					{
+						queryName:"Name",
+					},
+					{
+						queryName:"Type",
+					},
+					{
+						queryName:"Star",
+					},
+					{
+						queryName:"Room Type",
+					},
+					{
+						queryName:"Address",
+					},
+				],
+				queryIndex: 0,
+				list: [],
+				lists: [],
+                userid: '',
+				mescroll: null, //mescroll实例对象
+				downOption: {
+					auto: false //是否在初始化后,自动执行下拉回调callback; 默认true
+				},
+				upOption: {
+					noMoreSize: 5, //如果列表已无数据,可设置列表的总Number要大于半页才显示无更多数据;避免列表数据过少(比如只有一条数据),显示无更多数据会不好看; 默认5
+					textNoMore: '~ 没有更多了 ~',
+				},
+				hasNext: true,
+				searchForm:{},
+				CustomBar: '0'
+			};
+		},
+		computed: {
+			baseUrl() {
+				return this.$base.url;
+			}
+		},
+		async onShow() {
+			this.btnColor = this.btnColor.sort(()=> {
+                                return (0.5-Math.random());
+                        });
+			this.hasNext = true
+			// 重新加载数据
+			if (this.mescroll) this.mescroll.resetUpScroll()
+		},
+		onLoad(options) {
+            if(options.userid) {
+                this.userid=options.userid;
+            } else {
+                this.userid = "";
+            }
+			this.hasNext = true
+			// 重新加载数据
+			if (this.mescroll) this.mescroll.resetUpScroll()
+		},
+		methods: {
+			//Search条件切换
+			queryChange(e) {
+				this.queryIndex=e.detail.value;
+				this.searchForm.jiudianmingcheng="";
+				this.searchForm.leibie="";
+				this.searchForm.xingji="";
+				this.searchForm.fangjianleixing="";
+				this.searchForm.jiudiandizhi="";
+			},
+			//Type搜索
+			// mescroll组件初始化的回调,可获取到mescroll对象
+			mescrollInit(mescroll) {
+				this.mescroll = mescroll;
+			},
+			/*下拉刷新的回调 */
+			downCallback(mescroll) {
+				this.hasNext = true
+				// 重置分页参数页数为1
+				mescroll.resetUpScroll()
+			},
+			/*上拉加载的回调: mescroll携带page的参数, 其中num:当前页 从1开始, size:每页数据条数,默认10 */
+			async upCallback(mescroll) {
+				let params = {
+					page: mescroll.num,
+					limit: mescroll.size
+				}
+
+
+				if(this.searchForm.jiudianmingcheng){
+					params['jiudianmingcheng'] = '%' + this.searchForm.jiudianmingcheng + '%'
+				}
+				if(this.searchForm.leibie){
+					params['leibie'] = '%' + this.searchForm.leibie + '%'
+				}
+				if(this.searchForm.xingji){
+					params['xingji'] = '%' + this.searchForm.xingji + '%'
+				}
+				if(this.searchForm.fangjianleixing){
+					params['fangjianleixing'] = '%' + this.searchForm.fangjianleixing + '%'
+				}
+				if(this.searchForm.jiudiandizhi){
+					params['jiudiandizhi'] = '%' + this.searchForm.jiudiandizhi + '%'
+				}
+
+
+
+                let res = {}
+                if(this.userid) {
+                    res = await this.$api.page(`jiudianxinxi`, params);
+                } else {
+                    res = await this.$api.list(`jiudianxinxi`, params);
+                }
+				// 如果是第一页数据置空
+				if (mescroll.num == 1) this.list = [];
+				this.list = this.list.concat(res.data.list);
+				let length = Math.ceil(this.list.length/6)
+				let arr = [];
+				for (let i = 0; i<length; i++){
+					arr[i] = this.list.slice(i*6, (i+1)*6)
+				}
+				this.lists = arr
+				if (res.data.list.length == 0) this.hasNext = false;
+				mescroll.endSuccess(mescroll.size, this.hasNext);
+			},
+			// Details
+			onDetailTap(item) {
+                uni.setStorageSync("useridTag",this.userid);
+				this.$utils.jump(`./detail?id=${item.id}&userid=`+this.userid)
+			},
+			// Modify
+			onUpdateTap(id){
+                uni.setStorageSync("useridTag",this.userid);
+				this.$utils.jump(`./add-or-update?id=${id}`)
+			},
+			// 添加
+			onAddTap(){
+                uni.setStorageSync("useridTag",this.userid);
+				this.$utils.jump(`./add-or-update`)
+			},
+			onDeleteTap(id){
+				var _this = this;
+				uni.showModal({
+					title: '提示',
+					content: '是否确认Delete',
+					success: async function(res) {
+						if (res.confirm) {
+							await _this.$api.del('jiudianxinxi', JSON.stringify([id]));
+							_this.hasNext = true
+							// 重置分页参数页数为1
+							_this.mescroll.resetUpScroll()
+						}
+					}
+				});
+			},
+			// 搜索
+			async search(){
+				this.mescroll.num = 1
+				let searchForm = {
+					page: this.mescroll.num,
+					limit: this.mescroll.size
+				}
+				if(this.searchForm.jiudianmingcheng){
+					searchForm['jiudianmingcheng'] = '%' + this.searchForm.jiudianmingcheng + '%'
+				}
+				if(this.searchForm.leibie){
+					searchForm['leibie'] = '%' + this.searchForm.leibie + '%'
+				}
+				if(this.searchForm.xingji){
+					searchForm['xingji'] = '%' + this.searchForm.xingji + '%'
+				}
+				if(this.searchForm.fangjianleixing){
+					searchForm['fangjianleixing'] = '%' + this.searchForm.fangjianleixing + '%'
+				}
+				if(this.searchForm.jiudiandizhi){
+					searchForm['jiudiandizhi'] = '%' + this.searchForm.jiudiandizhi + '%'
+				}
+                let res = {};
+                if(this.userid) {
+                    res = await this.$api.page(`jiudianxinxi`, searchForm);
+                } else {
+                    res = await this.$api.list(`jiudianxinxi`, searchForm);
+                }
+				// 如果是第一页数据置空
+				if (this.mescroll.num == 1) this.list = [];
+				this.list = this.list.concat(res.data.list);
+				let length = Math.ceil(this.list.length/6)
+				let arr = [];
+				for (let i = 0; i<length; i++){
+					arr[i] = this.list.slice(i*6, (i+1)*6)
+				}
+				this.lists = arr
+				if (res.data.list.length == 0) this.hasNext = false;
+				this.mescroll.endSuccess(this.mescroll.size, this.hasNext);
+			}
+		}
+	};
+</script>
+
+<style lang="scss" scoped>
+	.content {
+		min-height: calc(100vh - 44px);
+		box-sizing: border-box;
+	}
+	
+	.category-one .tab {
+		cursor: pointer;
+		padding: 0 32rpx;
+		margin: 0 0 16rpx;
+		color: #333;
+		background: #fff;
+		display: inline-block;
+		width: auto;
+		font-size: 28rpx;
+		line-height: 80rpx;
+	}
+	
+	.category-one .tab.active {
+		cursor: pointer;
+		border-radius: 40rpx;
+		padding: 0 32rpx;
+		box-shadow: 0px 6rpx 6rpx #afade4;
+		margin: 0 0 16rpx;
+		color: #fff;
+		background: radial-gradient(circle, rgba(216,214,246,1) 0%, rgba(204,189,235,1) 24%, rgba(181,191,232,1) 62%, rgba(175,173,228,1) 100%);
+		display: inline-block;
+		width: auto;
+		font-size: 28rpx;
+		line-height: 80rpx;
+	}
+	
+	.category-two .tab {
+		cursor: pointer;
+		padding: 0;
+		color: #fff;
+		background: blue;
+		display: inline-block;
+		width: 100%;
+		font-size: 28rpx;
+		line-height: 80rpx;
+		text-align: center;
+	}
+	
+	.category-two .tab.active {
+		cursor: pointer;
+		padding: 0;
+		color: #fff;
+		background: #000;
+		display: inline-block;
+		width: 100%;
+		font-size: 28rpx;
+		line-height: 80rpx;
+		text-align: center;
+	}
+	
+	.category-three .tab {
+		cursor: pointer;
+		padding: 0;
+		color: #fff;
+		background: burlywood;
+		display: inline-block;
+		width: 100%;
+		font-size: 28rpx;
+		line-height: 80rpx;
+		text-align: center;
+	}
+	
+	.category-three .tab.active {
+		cursor: pointer;
+		padding: 0;
+		color: #fff;
+		background: #000;
+		display: inline-block;
+		width: 100%;
+		font-size: 28rpx;
+		line-height: 80rpx;
+		text-align: center;
+	}
+</style>
